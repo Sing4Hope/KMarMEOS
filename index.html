@@ -1,333 +1,298 @@
-<!--
-MEOS (Mock) - KMar
-GitHub Pages friendly single-file HTML for a mock MEOS (Melding- en Eenheid-Operationsysteem)
-Author: Milo (assistant)
-Notes:
-- This is a front-end only prototype (no server). Data is stored in browser localStorage.
-- Suitable to commit to a GitHub repo and enable GitHub Pages.
-- Replace branding, endpoints and storage with a backend when integrating with real systems.
-
-Usage:
-- Open the file in a browser or publish via GitHub Pages.
-- Use the login form (any username) to start a session.
-
-Features:
-- Modern dark/light theme with black/white aesthetic
-- Login modal (local only)
-- Incident list with add/edit/delete and quick filters
-- Export/Import JSON for persistence or sharing
-- Simulated map placeholder for future integration
-- Accessible, responsive layout
--->
-
 <!doctype html>
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MEOS — KMar (Prototype)</title>
-  <meta name="description" content="Prototype MEOS voor KMar — meldingensysteem (frontend-only)." />
+  <title>MEOS — Koninklijke Marechaussee</title>
+  <meta name="description" content="Officieel stijl prototype van het MEOS-systeem van de Koninklijke Marechaussee." />
   <style>
-    /* Minimal reset */
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+    body{background:#ffffff;color:#1a1a1a;min-height:100vh;padding:20px}
 
-    :root{
-      --bg:#0b0b0b; /* deep black */
-      --panel:#0f0f0f; /* slightly lighter */
-      --muted:#9aa0a6;
-      --accent:#c6c6c6; /* light grey accent */
-      --success:#6fcf97;
-      --danger:#ff6b6b;
-      --glass: rgba(255,255,255,0.03);
-      --radius:12px;
-    }
+    header{display:flex;align-items:center;justify-content:space-between;background:#00205b;color:#fff;padding:10px 20px;border-radius:12px}
+    header img{height:60px;width:auto}
+    header h1{font-size:24px;margin:0}
 
-    body{background:linear-gradient(180deg,var(--bg), #070707);color:var(--accent);padding:16px}
-    .app{max-width:1100px;margin:20px auto}
-
-    header{display:flex;align-items:center;gap:16px}
-    .brand{display:flex;flex-direction:column}
-    .brand h1{margin:0;font-size:20px;color:#fff}
-    .brand p{margin:0;font-size:12px;color:var(--muted)}
-
-    .top-actions{margin-left:auto;display:flex;gap:8px}
-    button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--accent);cursor:pointer}
-    button.primary{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)}
+    .app{max-width:1200px;margin:20px auto}
 
     main{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:18px}
 
-    .sidebar{background:var(--panel);padding:14px;border-radius:var(--radius);min-height:420px}
-    .card{background:var(--panel);padding:12px;border-radius:12px}
+    .sidebar{background:#f5f7fa;padding:16px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+    .details{background:#f5f7fa;padding:16px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
 
-    .search input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--accent)}
+    h2{color:#00205b}
+    button{background:#00205b;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;transition:background .2s}
+    button:hover{background:#001437}
+    button.secondary{background:#fff;color:#00205b;border:1px solid #00205b}
 
-    .filters{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-    .chip{padding:6px 8px;border-radius:8px;font-size:13px;border:1px solid rgba(255,255,255,0.03)}
+    input,textarea,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px}
+    .filters{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+    .chip{padding:6px 10px;border-radius:8px;border:1px solid #ccc;cursor:pointer}
+    .chip.active{background:#00205b;color:#fff;border-color:#00205b}
 
     .inc-list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
-    .inc{padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02);display:flex;justify-content:space-between;align-items:flex-start}
-    .inc h3{margin:0;font-size:14px;color:#fff}
-    .meta{font-size:12px;color:var(--muted)}
+    .inc{padding:10px;border-radius:10px;background:#fff;border:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:flex-start}
+    .inc h3{margin:0;font-size:15px;color:#00205b}
+    .meta{font-size:12px;color:#555}
 
-    .details{background:var(--panel);padding:14px;border-radius:var(--radius);min-height:420px}
-    .toolbar{display:flex;gap:8px;align-items:center}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal{background:#fff;padding:20px;border-radius:12px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.3)}
+    .modal h3{color:#00205b}
 
-    .form-row{display:flex;gap:8px;margin-top:8px}
-    input[type=text], textarea, select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--accent)}
-    textarea{min-height:88px}
-
-    footer{margin-top:14px;color:var(--muted);font-size:13px}
-
-    /* modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center}
-    .modal{background:linear-gradient(180deg,#0d0d0d,#0b0b0b);padding:18px;border-radius:16px;width:420px;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-
-    @media (max-width:900px){main{grid-template-columns:1fr;}.sidebar{order:2}}
+    @media (max-width:900px){main{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="KMar-removebg-preview.png" alt="Logo KMar" />
+      <div>
+        <h1>MEOS — Koninklijke Marechaussee</h1>
+        <p style="font-size:13px;opacity:0.9">Officieel meldingen- en operationsysteem (prototype)</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="importBtn" class="secondary">Import JSON</button>
+      <button id="exportBtn">Export JSON</button>
+      <button id="loginBtn" class="secondary">Login</button>
+    </div>
+  </header>
+
   <div class="app">
-    <header>
-      <div class="brand">
-        <h1>MEOS — KMar</h1>
-        <p>Prototype meldingen- & operationsysteem</p>
-      </div>
-
-      <div class="top-actions">
-        <button id="importBtn">Import JSON</button>
-        <button id="exportBtn" class="primary">Export JSON</button>
-        <button id="loginBtn">Login</button>
-      </div>
-    </header>
-
     <main>
-      <aside class="sidebar card">
-        <div class="search">
-          <input id="search" placeholder="Zoek incident, locatie of roepnummer..." />
-        </div>
-
+      <aside class="sidebar">
+        <input id="search" placeholder="Zoek melding..." />
         <div class="filters">
-          <div class="chip" data-filter="all">Alle</div>
+          <div class="chip active" data-filter="all">Alle</div>
           <div class="chip" data-filter="open">Open</div>
           <div class="chip" data-filter="ongoing">In uitvoering</div>
           <div class="chip" data-filter="closed">Afgesloten</div>
-          <div class="chip" data-filter="urgent">Urgent</div>
         </div>
-
-        <div class="inc-list" id="incList">
-          <!-- incidents inserted here -->
-        </div>
-
+        <div class="inc-list" id="incList"></div>
         <div style="margin-top:12px;display:flex;gap:8px">
-          <button id="newInc">Nieuw melding</button>
-          <button id="clearAll">Wis alles</button>
+          <button id="newInc">Nieuwe melding</button>
+          <button id="clearAll" class="secondary">Wis alles</button>
         </div>
       </aside>
 
-      <section class="details card" id="details">
-        <div class="toolbar">
-          <h2 id="detailsTitle">Selecteer een melding</h2>
-        </div>
-
-        <div id="detailBody" style="margin-top:12px;color:var(--muted)">
-          Geen melding geselecteerd. Klik op "Nieuw melding" om een te maken.
-        </div>
-
+      <section class="details">
+        <h2 id="detailsTitle">Selecteer een melding</h2>
+        <div id="detailBody" style="margin-top:10px;color:#444">Geen melding geselecteerd. Klik op “Nieuwe melding”.</div>
         <div style="margin-top:12px;display:flex;gap:8px">
           <button id="editBtn">Bewerk</button>
-          <button id="closeBtn">Sluit melding</button>
+          <button id="closeBtn" class="secondary">Sluit melding</button>
         </div>
-
-        <footer>
-          Prototype — niet voor operationeel gebruik. Vervang opslag en authenticatie met echte services.
-        </footer>
       </section>
     </main>
   </div>
 
-  <!-- Modal: Login / Create Incident / Edit -->
-  <div class="modal-backdrop" id="modal">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div id="modalContent">
-        <!-- dynamic content -->
-      </div>
-    </div>
-  </div>
+  <div class="modal-backdrop" id="modal"><div class="modal" id="modalContent"></div></div>
 
   <script>
-    // Simple app state
-    const storageKey = 'meos_kmar_v1';
-    let state = {user:null, incidents:[] , selectedId: null};
+    const storageKey = 'meos_kmar_v2';
+    let state = {user:null, incidents:[], selectedId:null};
+    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s));
 
-    // Utilities
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    function load(){ const raw=localStorage.getItem(storageKey); if(raw) state=JSON.parse(raw); render(); }
+    function save(){ localStorage.setItem(storageKey,JSON.stringify(state)); render(); }
 
-    function load(){
-      try{ const raw = localStorage.getItem(storageKey); if(raw) state = JSON.parse(raw); else save(); }
-      catch(e){ console.error('load error',e); }
-    }
-    function save(){ localStorage.setItem(storageKey, JSON.stringify(state)); render(); }
+    function uid(){return 'id_'+Math.random().toString(36).slice(2,9)}
+    function now(){return new Date().toLocaleString('nl-NL')}
 
-    // Render
     function render(){
-      // user
       $('#loginBtn').textContent = state.user ? (state.user+' • Logout') : 'Login';
-
-      // incidents list
-      const list = $('#incList'); list.innerHTML = '';
-      const q = $('#search').value.toLowerCase();
-      const filter = document.querySelector('.chip.active')?.dataset.filter || 'all';
-
-      state.incidents.filter(i => {
-        if(filter==='all') return true;
-        if(filter==='open') return i.status==='open';
-        if(filter==='ongoing') return i.status==='ongoing';
-        if(filter==='closed') return i.status==='closed';
-        if(filter==='urgent') return !!i.urgent;
-        return true;
-      }).filter(i => {
-        if(!q) return true;
-        return (i.title+i.location+i.callSign+i.description).toLowerCase().includes(q);
-      }).forEach(i => {
-        const el = document.createElement('div'); el.className='inc'; el.dataset.id=i.id;
-        el.innerHTML = `
-          <div>
-            <h3>${escapeHtml(i.title)}</h3>
-            <div class="meta">${i.callSign || '—'} • ${i.location || 'onbekend'} • ${i.time}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="meta">${i.status}</div>
-            <div style="margin-top:8px"><button data-action="open">Open</button></div>
-          </div>
-        `;
-        el.querySelector('button[data-action=open]').addEventListener('click',()=>selectIncident(i.id));
+      const list=$('#incList'); list.innerHTML='';
+      const q=$('#search').value.toLowerCase();
+      const f=document.querySelector('.chip.active')?.dataset.filter||'all';
+      state.incidents.filter(i=>f==='all'||i.status===f).filter(i=>(i.title+i.location+i.callSign).toLowerCase().includes(q)).forEach(i=>{
+        const el=document.createElement('div'); el.className='inc'; el.dataset.id=i.id;
+        el.innerHTML=`<div><h3>${i.title}</h3><div class='meta'>${i.callSign||'—'} • ${i.location||'—'}</div></div><button data-open='${i.id}'>Open</button>`;
         list.appendChild(el);
       });
-
-      // details
       renderDetails();
     }
 
-    function renderDetails(){
-      const title = $('#detailsTitle'); const body = $('#detailBody');
-      const i = state.incidents.find(x=>x.id===state.selectedId);
-      if(!i){ title.textContent='Selecteer een melding'; body.textContent='Geen melding geselecteerd. Klik op "Nieuw melding" om een te maken.'; return }
-      title.textContent = i.title;
-      body.innerHTML = `
-        <div><strong>Roepnummer:</strong> ${escapeHtml(i.callSign||'—')}</div>
-        <div><strong>Status:</strong> ${i.status}</div>
-        <div style="margin-top:8px"><strong>Locatie:</strong> ${escapeHtml(i.location||'—')}</div>
-        <div style="margin-top:8px"><strong>Tijd:</strong> ${i.time}</div>
-        <div style="margin-top:12px"><strong>Beschrijving</strong><p style="color:var(--accent)">${escapeHtml(i.description||'—')}</p></div>
-      `;
+    function renderDetails(){ const i=state.incidents.find(x=>x.id===state.selectedId); const t=$('#detailsTitle'); const b=$('#detailBody'); if(!i){t.textContent='Selecteer een melding'; b.textContent='Geen melding geselecteerd.'; return;} t.textContent=i.title; b.innerHTML=`<strong>Roepnummer:</strong> ${i.callSign||'—'}<br><strong>Status:</strong> ${i.status}<br><strong>Locatie:</strong> ${i.location||'—'}<br><strong>Tijd:</strong> ${i.time}<br><br><strong>Beschrijving:</strong><p>${i.description||'—'}</p>`; }
+
+    $('#newInc').onclick=()=>{
+      showModal(`<h3>Nieuwe melding</h3><input id='t' placeholder='Titel'/><input id='c' placeholder='Roepnummer'/><input id='l' placeholder='Locatie'/><textarea id='d' placeholder='Beschrijving...'></textarea><div style='margin-top:10px;text-align:right'><button id='save'>Opslaan</button></div>`);
+      $('#save').onclick=()=>{state.incidents.unshift({id:uid(),title:$('#t').value||'Nieuwe melding',callSign:$('#c').value,location:$('#l').value,description:$('#d').value,status:'open',time:now()});hideModal();save();};
     }
 
-    function selectIncident(id){ state.selectedId = id; save(); }
+    $('#editBtn').onclick=()=>{const i=state.incidents.find(x=>x.id===state.selectedId);if(!i)return;showModal(`<h3>Bewerk melding</h3><input id='t' value='${i.title}'/><input id='c' value='${i.callSign}'/><input id='l' value='${i.location}'/><textarea id='d'>${i.description}</textarea><div style='margin-top:10px;text-align:right'><button id='save'>Opslaan</button></div>`);$('#save').onclick=()=>{i.title=$('#t').value;i.callSign=$('#c').value;i.location=$('#l').value;i.description=$('#d').value;i.time=now();hideModal();save();}}
 
-    // small helpers
-    function uid(){ return 'id_'+Math.random().toString(36).slice(2,9); }
-    function now(){ return new Date().toLocaleString('nl-NL'); }
-    function escapeHtml(s){ if(!s && s!==0) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+    $('#closeBtn').onclick=()=>{const i=state.incidents.find(x=>x.id===state.selectedId);if(!i)return;i.status='closed';i.time=now();save();}
 
-    // Modal helpers
-    function showModal(contentHtml){ $('#modalContent').innerHTML = contentHtml; $('#modal').style.display='flex'; }
-    function hideModal(){ $('#modal').style.display='none'; $('#modalContent').innerHTML=''; }
+    $('#loginBtn').onclick=()=>{if(state.user){state.user=null;save();return}showModal(`<h3>Login</h3><input id='u' placeholder='Gebruikersnaam'/><div style='margin-top:10px;text-align:right'><button id='ok'>Login</button></div>`);$('#ok').onclick=()=>{state.user=$('#u').value;hideModal();save();}}
 
-    // Actions
-    $('#loginBtn').addEventListener('click', ()=>{
-      if(state.user){ state.user=null; save(); return }
-      showModal(`
-        <h3>Login</h3>
-        <div style="margin-top:8px"><label>Gebruikersnaam</label><input id="loginUser" type="text" /></div>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button id="cancelLogin">Annuleren</button><button id="doLogin" class="primary">Login</button></div>
-      `);
-      $('#cancelLogin').addEventListener('click',hideModal);
-      $('#doLogin').addEventListener('click', ()=>{ const u = $('#loginUser').value.trim(); if(!u) return alert('Vul een gebruikersnaam in'); state.user=u; save(); hideModal(); });
-    });
+    $('#clearAll').onclick=()=>{if(confirm('Alle meldingen verwijderen?')){state.incidents=[];state.selectedId=null;save();}}
 
-    $('#newInc').addEventListener('click', ()=>{
-      showModal(`
-        <h3>Nieuwe melding</h3>
-        <div class="form-row"><input id="m_title" placeholder="Titel (bijv. Verdachte situatie)" /></div>
-        <div class="form-row"><input id="m_call" placeholder="Roepnummer (bijv. KMar001)" /></div>
-        <div class="form-row"><input id="m_loc" placeholder="Locatie" /></div>
-        <div class="form-row"><select id="m_status"><option value="open">open</option><option value="ongoing">in uitvoering</option><option value="closed">afgesloten</option></select></div>
-        <div class="form-row"><textarea id="m_desc" placeholder="Beschrijving..."></textarea></div>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button id="cancelNew">Annuleren</button><button id="saveNew" class="primary">Opslaan</button></div>
-      `);
-      $('#cancelNew').addEventListener('click', hideModal);
-      $('#saveNew').addEventListener('click', ()=>{
-        const newInc = { id:uid(), title:$('#m_title').value||'Onbekende melding', callSign:$('#m_call').value, location:$('#m_loc').value, status:$('#m_status').value, description:$('#m_desc').value, time:now(), urgent:false };
-        state.incidents.unshift(newInc); state.selectedId=newInc.id; save(); hideModal();
+    $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meos_kmar.json';a.click();}
+
+    $('#importBtn').onclick=()=>{showModal(`<h3>Import JSON</h3><input type='file' id='file' accept='application/json'/><div style='margin-top:10px;text-align:right'><button id='ok'>Importeer</button></div>`);$('#ok').onclick=()=>{const f=$('#file').files[0];if(!f)return;const r=new FileReader();r.onload=e=>{state=JSON.parse(e.target.result);hideModal();save();};r.readAsText(f);}}
+
+    $$('#incList').forEach(()=>{});
+    $('#search').oninput=()=>render();
+    $$('.chip').forEach(c=>c.onclick=()=>{$$('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');render();});
+
+    function showModal(html){$('#modalContent').innerHTML=html;$('#modal').style.display='flex';}
+    function hideModal(){$('#modal').style.display='none';$('#modalContent').innerHTML='';}
+
+    document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')hideModal();});
+
+    document.addEventListener('click',e=>{if(e.target.dataset.open){state.selectedId=e.target.dataset.open;save();}});
+
+    load();
+    if(state.incidents.length===0){state.incidents.push({id:uid(),title:'Controle grenspost',callSign:'KMar-01',location:'Breda',status:'open',description:'Routinecontrole voertuig bij grensovergang.',time:now()});save();}
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MEOS — Koninklijke Marechaussee</title>
+  <meta name="description" content="Officieel stijl prototype van het MEOS-systeem van de Koninklijke Marechaussee." />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+    body{background:#ffffff;color:#1a1a1a;min-height:100vh;padding:20px}
+
+    header{display:flex;align-items:center;justify-content:space-between;background:#00205b;color:#fff;padding:10px 20px;border-radius:12px}
+    header img{height:60px;width:auto}
+    header h1{font-size:24px;margin:0}
+
+    .app{max-width:1200px;margin:20px auto}
+
+    main{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:18px}
+
+    .sidebar{background:#f5f7fa;padding:16px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+    .details{background:#f5f7fa;padding:16px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+
+    h2{color:#00205b}
+    button{background:#00205b;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;transition:background .2s}
+    button:hover{background:#001437}
+    button.secondary{background:#fff;color:#00205b;border:1px solid #00205b}
+
+    input,textarea,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:8px}
+    .filters{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+    .chip{padding:6px 10px;border-radius:8px;border:1px solid #ccc;cursor:pointer}
+    .chip.active{background:#00205b;color:#fff;border-color:#00205b}
+
+    .inc-list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .inc{padding:10px;border-radius:10px;background:#fff;border:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:flex-start}
+    .inc h3{margin:0;font-size:15px;color:#00205b}
+    .meta{font-size:12px;color:#555}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:50}
+    .modal{background:#fff;padding:20px;border-radius:12px;max-width:420px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.3)}
+    .modal h3{color:#00205b}
+
+    @media (max-width:900px){main{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="KMar-removebg-preview.png" alt="Logo KMar" />
+      <div>
+        <h1>MEOS — Koninklijke Marechaussee</h1>
+        <p style="font-size:13px;opacity:0.9">Officieel meldingen- en operationsysteem (prototype)</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="importBtn" class="secondary">Import JSON</button>
+      <button id="exportBtn">Export JSON</button>
+      <button id="loginBtn" class="secondary">Login</button>
+    </div>
+  </header>
+
+  <div class="app">
+    <main>
+      <aside class="sidebar">
+        <input id="search" placeholder="Zoek melding..." />
+        <div class="filters">
+          <div class="chip active" data-filter="all">Alle</div>
+          <div class="chip" data-filter="open">Open</div>
+          <div class="chip" data-filter="ongoing">In uitvoering</div>
+          <div class="chip" data-filter="closed">Afgesloten</div>
+        </div>
+        <div class="inc-list" id="incList"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="newInc">Nieuwe melding</button>
+          <button id="clearAll" class="secondary">Wis alles</button>
+        </div>
+      </aside>
+
+      <section class="details">
+        <h2 id="detailsTitle">Selecteer een melding</h2>
+        <div id="detailBody" style="margin-top:10px;color:#444">Geen melding geselecteerd. Klik op “Nieuwe melding”.</div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="editBtn">Bewerk</button>
+          <button id="closeBtn" class="secondary">Sluit melding</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal"><div class="modal" id="modalContent"></div></div>
+
+  <script>
+    const storageKey = 'meos_kmar_v2';
+    let state = {user:null, incidents:[], selectedId:null};
+    const $ = s=>document.querySelector(s); const $$ = s=>Array.from(document.querySelectorAll(s));
+
+    function load(){ const raw=localStorage.getItem(storageKey); if(raw) state=JSON.parse(raw); render(); }
+    function save(){ localStorage.setItem(storageKey,JSON.stringify(state)); render(); }
+
+    function uid(){return 'id_'+Math.random().toString(36).slice(2,9)}
+    function now(){return new Date().toLocaleString('nl-NL')}
+
+    function render(){
+      $('#loginBtn').textContent = state.user ? (state.user+' • Logout') : 'Login';
+      const list=$('#incList'); list.innerHTML='';
+      const q=$('#search').value.toLowerCase();
+      const f=document.querySelector('.chip.active')?.dataset.filter||'all';
+      state.incidents.filter(i=>f==='all'||i.status===f).filter(i=>(i.title+i.location+i.callSign).toLowerCase().includes(q)).forEach(i=>{
+        const el=document.createElement('div'); el.className='inc'; el.dataset.id=i.id;
+        el.innerHTML=`<div><h3>${i.title}</h3><div class='meta'>${i.callSign||'—'} • ${i.location||'—'}</div></div><button data-open='${i.id}'>Open</button>`;
+        list.appendChild(el);
       });
-    });
-
-    $('#clearAll').addEventListener('click', ()=>{ if(confirm('Weet je het zeker? Alle meldingen worden verwijderd.')){ state.incidents=[]; state.selectedId=null; save(); } });
-
-    $('#exportBtn').addEventListener('click', ()=>{
-      const data = JSON.stringify(state, null, 2);
-      const blob = new Blob([data],{type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href=url; a.download='meos_kmar_export.json'; a.click(); URL.revokeObjectURL(url);
-    });
-
-    $('#importBtn').addEventListener('click', ()=>{
-      showModal(`
-        <h3>Import JSON</h3>
-        <div><input id="fileInput" type="file" accept="application/json" /></div>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button id="cancelImp">Annuleren</button><button id="doImport" class="primary">Importeer</button></div>
-      `);
-      $('#cancelImp').addEventListener('click', hideModal);
-      $('#doImport').addEventListener('click', ()=>{
-        const f = $('#fileInput').files?.[0]; if(!f) return alert('Kies een JSON bestand');
-        const reader = new FileReader(); reader.onload = e=>{
-          try{ const imported = JSON.parse(e.target.result); if(imported.incidents) state = imported; else alert('Ongeldig bestand'); save(); hideModal(); } catch(err){ alert('Fout bij lezen JSON'); }
-        }; reader.readAsText(f);
-      });
-    });
-
-    // chips
-    $$('.chip').forEach(c=>c.addEventListener('click', e=>{ $$('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); render(); }));
-    $('#search').addEventListener('input', ()=>render());
-
-    // edit/close
-    $('#editBtn').addEventListener('click', ()=>{
-      const i = state.incidents.find(x=>x.id===state.selectedId); if(!i) return alert('Geen melding geselecteerd');
-      showModal(`
-        <h3>Melding bewerken</h3>
-        <div class="form-row"><input id="e_title" value="${escapeHtml(i.title)}" /></div>
-        <div class="form-row"><input id="e_call" value="${escapeHtml(i.callSign)}" /></div>
-        <div class="form-row"><input id="e_loc" value="${escapeHtml(i.location)}" /></div>
-        <div class="form-row"><select id="e_status"><option value="open">open</option><option value="ongoing">in uitvoering</option><option value="closed">afgesloten</option></select></div>
-        <div class="form-row"><textarea id="e_desc">${escapeHtml(i.description)}</textarea></div>
-        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button id="cancelEdit">Annuleren</button><button id="saveEdit" class="primary">Opslaan</button></div>
-      `);
-      $('#e_status').value = i.status;
-      $('#cancelEdit').addEventListener('click', hideModal);
-      $('#saveEdit').addEventListener('click', ()=>{
-        i.title = $('#e_title').value; i.callSign = $('#e_call').value; i.location = $('#e_loc').value; i.status = $('#e_status').value; i.description = $('#e_desc').value; i.time = now(); save(); hideModal();
-      });
-    });
-
-    $('#closeBtn').addEventListener('click', ()=>{
-      const i = state.incidents.find(x=>x.id===state.selectedId); if(!i) return alert('Geen melding geselecteerd'); i.status='closed'; i.time=now(); save();
-    });
-
-    // initial load
-    load(); render();
-
-    // seed sample data if empty
-    if(state.incidents.length===0){
-      state.incidents.push({id:uid(), title:'Verdacht voertuig', callSign:'KMar-07', location:'N50.814, E4.526', status:'open', description:'Getuigen zien voertuig met onbekende koers bij grenspost.', time:now(), urgent:true});
-      state.incidents.push({id:uid(), title:'Ongeval A4', callSign:'KMar-12', location:'A4 rijrichting zuid', status:'ongoing', description:'Botsing tussen twee voertuigen; assistentie nodig.', time:now(), urgent:false});
-      save();
+      renderDetails();
     }
 
-    // close modal on backdrop click
-    document.getElementById('modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') hideModal(); });
+    function renderDetails(){ const i=state.incidents.find(x=>x.id===state.selectedId); const t=$('#detailsTitle'); const b=$('#detailBody'); if(!i){t.textContent='Selecteer een melding'; b.textContent='Geen melding geselecteerd.'; return;} t.textContent=i.title; b.innerHTML=`<strong>Roepnummer:</strong> ${i.callSign||'—'}<br><strong>Status:</strong> ${i.status}<br><strong>Locatie:</strong> ${i.location||'—'}<br><strong>Tijd:</strong> ${i.time}<br><br><strong>Beschrijving:</strong><p>${i.description||'—'}</p>`; }
 
+    $('#newInc').onclick=()=>{
+      showModal(`<h3>Nieuwe melding</h3><input id='t' placeholder='Titel'/><input id='c' placeholder='Roepnummer'/><input id='l' placeholder='Locatie'/><textarea id='d' placeholder='Beschrijving...'></textarea><div style='margin-top:10px;text-align:right'><button id='save'>Opslaan</button></div>`);
+      $('#save').onclick=()=>{state.incidents.unshift({id:uid(),title:$('#t').value||'Nieuwe melding',callSign:$('#c').value,location:$('#l').value,description:$('#d').value,status:'open',time:now()});hideModal();save();};
+    }
+
+    $('#editBtn').onclick=()=>{const i=state.incidents.find(x=>x.id===state.selectedId);if(!i)return;showModal(`<h3>Bewerk melding</h3><input id='t' value='${i.title}'/><input id='c' value='${i.callSign}'/><input id='l' value='${i.location}'/><textarea id='d'>${i.description}</textarea><div style='margin-top:10px;text-align:right'><button id='save'>Opslaan</button></div>`);$('#save').onclick=()=>{i.title=$('#t').value;i.callSign=$('#c').value;i.location=$('#l').value;i.description=$('#d').value;i.time=now();hideModal();save();}}
+
+    $('#closeBtn').onclick=()=>{const i=state.incidents.find(x=>x.id===state.selectedId);if(!i)return;i.status='closed';i.time=now();save();}
+
+    $('#loginBtn').onclick=()=>{if(state.user){state.user=null;save();return}showModal(`<h3>Login</h3><input id='u' placeholder='Gebruikersnaam'/><div style='margin-top:10px;text-align:right'><button id='ok'>Login</button></div>`);$('#ok').onclick=()=>{state.user=$('#u').value;hideModal();save();}}
+
+    $('#clearAll').onclick=()=>{if(confirm('Alle meldingen verwijderen?')){state.incidents=[];state.selectedId=null;save();}}
+
+    $('#exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meos_kmar.json';a.click();}
+
+    $('#importBtn').onclick=()=>{showModal(`<h3>Import JSON</h3><input type='file' id='file' accept='application/json'/><div style='margin-top:10px;text-align:right'><button id='ok'>Importeer</button></div>`);$('#ok').onclick=()=>{const f=$('#file').files[0];if(!f)return;const r=new FileReader();r.onload=e=>{state=JSON.parse(e.target.result);hideModal();save();};r.readAsText(f);}}
+
+    $$('#incList').forEach(()=>{});
+    $('#search').oninput=()=>render();
+    $$('.chip').forEach(c=>c.onclick=()=>{$$('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');render();});
+
+    function showModal(html){$('#modalContent').innerHTML=html;$('#modal').style.display='flex';}
+    function hideModal(){$('#modal').style.display='none';$('#modalContent').innerHTML='';}
+
+    document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')hideModal();});
+
+    document.addEventListener('click',e=>{if(e.target.dataset.open){state.selectedId=e.target.dataset.open;save();}});
+
+    load();
+    if(state.incidents.length===0){state.incidents.push({id:uid(),title:'Controle grenspost',callSign:'KMar-01',location:'Breda',status:'open',description:'Routinecontrole voertuig bij grensovergang.',time:now()});save();}
   </script>
 </body>
 </html>
